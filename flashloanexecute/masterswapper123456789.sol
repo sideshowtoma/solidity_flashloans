@@ -9,36 +9,28 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
     using SafeMath for uint256;
     address public owner_ni_nani_mazee_ehh;
 
-    
-    /*
-    string transaction_hash,
-                                            string transaction1_center, 
-                                            string transaction1_address_in,
-                                            string transaction1_address_out,
-                                            string transaction1_token_in,
-                                            string transaction1_token_out,
-                                            uint256 transaction1_amount_in,
-                                            uint256 transaction1_amount_out,
-                                            string transaction2_center,     
-                                            string transaction2_address_in,
-                                            string transaction2_address_out,   
-                                            string transaction2_token_in,
-                                            string transaction2_token_out,
-                                            uint256 transaction2_amount_in,
-                                            uint256 transaction3_amount_out
-    */
-    struct mytransactions
-   {
-        string transaction_hash;
-        string transaction1_address_in_comb;
-        uint256 transaction1_amount_in,
-        string transaction1_address_out_comb;
-        int256 transaction1_amount_out,
-       bool umeowa;
+    mapping(uint=> transactionsmine) public transactionsminearray;
 
-   }
+    uint256 public transactionsmine_counter=0;
 
 
+    struct transactionsmine
+    {
+                string  transaction1_center;
+                address  transaction1_address_in;
+                address  transaction1_address_out;
+                uint256 transaction1_amount_in;
+                uint256 transaction1_amount_out;
+                string  transaction2_center;     
+                address  transaction2_address_in;
+                address  transaction2_address_out;  
+                uint256 transaction2_amount_in;
+                uint256 transaction2_amount_out;
+                uint256 time_stamp;
+
+    }
+
+     transactionsmine public current_items;
 
     constructor(address _addressProvider) public FlashLoanReceiverBaseV2(_addressProvider)
     {
@@ -84,7 +76,9 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
         return true;
     }
 
-    function _flashloan(address[] memory assets, uint256[] memory amounts) internal
+    function _flashloan(address[] memory assets, 
+                        uint256[] memory amounts
+    ) internal
     {
         address receiverAddress = address(this);
 
@@ -110,46 +104,60 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
         );
     }
 
-    
-    function flashloan(address _asset,uint256 amount) public onlyOwner 
-    {
-        bytes memory data = "";
-
-        address[] memory assets = new address[](1);
-        assets[0] = _asset;
-
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = amount;
-
-        _flashloan(assets, amounts);
-    }
 
 
-
-//17-3-2022 11:56:31::: Used (0x6b175474e89094c44da98b954eedeac495271d0f) dai[1111.0] to buy (0xa117000000f279d81a1d3cc75430faa017fa5a2e) ant[223.0] at sushi, and sold the ant[223.0] to get dai[1747.0 ]  at uniswap with 100.18 > 157.24572457245725%  
-        function initiate_loan_and_deals(string transaction_hash,
-                                            string transaction1_center, 
-                                            string transaction1_address_in,
-                                            string transaction1_address_out,
-                                            string transaction1_token_in,
-                                            string transaction1_token_out,
+       function initiate_loan_and_deals(
+                                            string memory transaction1_center, 
+                                            address  transaction1_address_in,
+                                            address  transaction1_address_out,
                                             uint256 transaction1_amount_in,
                                             uint256 transaction1_amount_out,
-                                            string transaction2_center,     
-                                            string transaction2_address_in,
-                                            string transaction2_address_out,   
-                                            string transaction2_token_in,
-                                            string transaction2_token_out,
+                                            string memory transaction2_center,     
+                                            address  transaction2_address_in,
+                                            address  transaction2_address_out,  
                                             uint256 transaction2_amount_in,
-                                            uint256 transaction3_amount_out
+                                            uint256 transaction2_amount_out
                                             ) 
         public onlyOwner
         {
+            
+           
+          transactionsmine memory transactionsmine_this=  transactionsmine(
+                                                                                    transaction1_center,
+                                                                                    transaction1_address_in,
+                                                                                    transaction1_address_out,
+                                                                                    transaction1_amount_in,
+                                                                                    transaction1_amount_out,
+                                                                                    transaction2_center,     
+                                                                                    transaction2_address_in,
+                                                                                    transaction2_address_out,  
+                                                                                    transaction2_amount_in,
+                                                                                    transaction2_amount_out,
+                                                                                    block.timestamp
+                                                                        );
 
+                transactionsminearray[transactionsmine_counter]=transactionsmine_this;
+                transactionsmine_counter++;
+
+
+
+
+                //get the flash loan
+                    address[] memory assets = new address[](1);
+                    assets[0] = transaction1_address_in;
+
+                    uint256[] memory amounts = new uint256[](1);
+                    amounts[0] = transaction1_amount_in;
+
+                    current_items=transactionsmine_this;
+
+                    _flashloan(assets,  amounts);
+                    
         }
   
 
 
+      
     
 
 
