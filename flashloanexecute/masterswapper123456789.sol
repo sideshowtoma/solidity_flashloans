@@ -14,6 +14,15 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
     uint256 public transactionsmine_counter=0;
 
 
+    mapping(uint=> transactionsmine) public transactionsminearrayclone;
+
+    uint256 public transactionsmine_counterclone=0;
+
+
+    mapping (address=>uint256) public balances_are_hahah;
+    mapping (string=>string) public transaction_happen;
+
+
     struct transactionsmine
     {
                 string  transaction1_center;
@@ -60,7 +69,23 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
         // Your logic goes here.
         //
 
-        
+
+        uint256 amountOutFinal0=swap_execute5655455(current_items.transaction1_center,
+                            current_items.transaction1_amount_in, 
+                            current_items.transaction1_amount_out,
+                            current_items.transaction1_address_in,
+                            current_items.transaction1_address_out);
+
+
+        uint256 amountOutFinal1=swap_execute5655455(current_items.transaction2_center,
+                            amountOutFinal0, 
+                            current_items.transaction2_amount_out,
+                            current_items.transaction2_address_in,
+                            current_items.transaction2_address_out);
+       
+                transactionsminearrayclone[transactionsmine_counterclone]=current_items;
+                transactionsmine_counterclone++;
+
 
         // At the end of your logic above, this contract owes
         // the flashloaned amounts + premiums.
@@ -157,8 +182,70 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
   
 
 
+        function swap_execute5655455(string memory center,uint256 amountIn, uint256 amountOut, address tokenIn, address tokenOut) internal returns ( uint256 amountOutFinal)
+        {
+                if(keccak256(bytes(center)) == keccak256(bytes("sushi")))
+                {
+                        amountOutFinal=amountOut;
+                }
+                else if(keccak256(bytes(center)) == keccak256(bytes("uniswap")))
+                {
+                      amountOutFinal=amountOut;
+                }
+                else if(keccak256(bytes(center)) == keccak256(bytes("kyberswap")))
+                {
+                      amountOutFinal=amountOut;
+                }
+                else if(keccak256(bytes(center)) == keccak256(bytes("bancor")))
+                {
+                      amountOutFinal=amountOut;
+                }
+                else
+                {
+                     amountOutFinal=amountOut;
+                }
+
+
+
+
+        }
+
+
+        
+
       
-    
+     function get_my_balance_hahah_hujui_hii( address tracker_0x_address) public 
+    {
+            
+        balances_are_hahah[tracker_0x_address]=ERC20(tracker_0x_address).balanceOf(address(this));
+
+
+    }
+
+
+    function transferERC20_now_hahaha(string memory tracker,IERC20 token, address payable to, uint256 amount) public 
+    {
+        if(msg.sender == owner_ni_nani_mazee_ehh)
+        {
+            uint256 erc20balance = token.balanceOf(address(this));
+
+            if(amount <= erc20balance)
+            {
+                 token.transfer(to, amount);
+
+                 transaction_happen[tracker]="success.";
+            }
+            else
+            {
+                  transaction_happen[tracker]="insufficient balance.";
+            }
+        }
+        else
+        {
+             transaction_happen[tracker]="invalid sender.";
+        }
+           
+    }
 
 
 } 
