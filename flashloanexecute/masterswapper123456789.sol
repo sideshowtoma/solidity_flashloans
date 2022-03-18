@@ -11,6 +11,18 @@ import '../uniswap/contracts/libraries/TransferHelper.sol';
 import '../uniswap/contracts/interfaces/ISwapRouter.sol';
 
 
+//sushiswap
+import "../sushiswap/interfaces/IUniswapV2Router02.sol";
+import '../zeplin/token/ERC20/IERC20.sol';
+
+//kyberswap
+import "../kyber2/interfaces/IDMMRouter02.sol";
+import "../kyber2/interfaces/IDMMFactory.sol";
+
+//bancor
+import '../bancor/interfaces/IContractRegistry.sol'; 
+import '../bancor/interfaces/IBancorNetwork.sol';
+
 
 contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
 
@@ -50,17 +62,42 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
 
 
 ISwapRouter public immutable UniSwapRouter;
+ IUniswapV2Router02 public SushiUniRouter ;
 
+    IDMMRouter02 public dmmRouter;
+    IDMMFactory public dmmFactory;
 
-    
+    IContractRegistry contractRegistry; 
+    bytes32 public constant bancorNetworkName="BancorNetwork";
+
 
      //transactionsmine public current_items;
 
-    constructor(address _addressProvider,ISwapRouter _UniSwapRouter) public FlashLoanReceiverBaseV2(_addressProvider)
+    constructor(address _addressProvider,ISwapRouter _UniSwapRouter,IUniswapV2Router02  _SushiUniRouter ,IDMMRouter02 _KeyberdmmRouter,IContractRegistry _BancorcontractRegistry ) public FlashLoanReceiverBaseV2(_addressProvider)
     {
+        //uni
         owner_ni_nani_mazee_ehh=msg.sender;
         UniSwapRouter=_UniSwapRouter;
+
+        //sushi
+        SushiUniRouter = IUniswapV2Router02(_SushiUniRouter);
+
+        //kyber
+        dmmRouter = _KeyberdmmRouter;
+        dmmFactory = IDMMFactory(dmmRouter.factory());
+
+        //bancor
+        contractRegistry=_BancorcontractRegistry;
+        
     }
+
+
+                function getBancorNetworkContract() public returns(IBancorNetwork)
+                { 
+                        return IBancorNetwork(contractRegistry.addressOf(bancorNetworkName));
+
+                }
+
 
     /**
      * @dev This function must be called only be the LENDING_POOL and takes care of repaying
@@ -205,7 +242,38 @@ ISwapRouter public immutable UniSwapRouter;
         {
                 if(keccak256(bytes(center)) == keccak256(bytes("sushi")))
                 {
-                        amountOutFinal=amountOut;
+
+                    address[] memory path = new address[](2);
+                    path[0] = tokenIn;
+                    path[1] = tokenOut;
+                    uint amountOut_sushi =SushiUniRouter.getAmountsOut(amountIn, path)[0];
+
+
+                     //make sure the out is more than what u anticipate
+                     if(amountOut_sushi>=amountOut)
+                     {
+                            //approve
+                             IERC20(tokenIn).approve(address(SushiUniRouter), amountIn);
+                             IERC20(tokenOut).approve(address(SushiUniRouter), amountOut_sushi);
+
+                            SushiUniRouter.swapExactTokensForTokens(
+                                                        amountIn, 
+                                                        amountOut_sushi,
+                                                        path, 
+                                                        address(this), 
+                                                        block.timestamp + 120
+                                                    );
+
+
+                                                    amountOutFinal=amountOut_sushi;
+
+                     } 
+                     else
+                     {
+                            amountOutFinal=amountOut;
+                     }  
+
+                        
                 }
                 else if(keccak256(bytes(center)) == keccak256(bytes("uniswap")))
                 {
@@ -217,7 +285,7 @@ ISwapRouter public immutable UniSwapRouter;
                                                                         tokenOut: tokenOut,
                                                                         fee: 3000,
                                                                         recipient: address(this),
-                                                                        deadline: block.timestamp+90,
+                                                                        deadline: block.timestamp+120,
                                                                         amountIn: amountIn,
                                                                         amountOutMinimum: amountOut,
                                                                         sqrtPriceLimitX96: 0
@@ -230,11 +298,58 @@ ISwapRouter public immutable UniSwapRouter;
                 }
                 else if(keccak256(bytes(center)) == keccak256(bytes("kyberswap")))
                 {
-                      amountOutFinal=amountOut;
+                            IERC20[] memory path = new IERC20[](2);
+                            path[0] = IERC20(tokenIn); // assuming core is specified as IERC20
+                            path[1] = IERC20(tokenOut); // assuming usdt is specified as IERC20
+
+                            address[] memory poolsPath = dmmFactory.getPools(IERC20(tokenIn), IERC20(tokenOut));
+                            require(IERC20(tokenIn).approve(address(dmmRouter), amountIn), 'approve failed');
+
+                            
+                                    dmmRouter.swapTokensForExactTokens(
+                                                                            amountIn, // 
+                                                                            amountOut, // should be obtained via a price oracle, either off or on-chain
+                                                                            poolsPath, // eg. [core-usdt-pool]
+                                                                            path,
+                                                                           address(this), 
+                                                                            block.timestamp + 120
+                                                                        );
+
+
+                            amountOutFinal=amountOut;
+                           
+                      //amountOutFinal=amountOut;
                 }
                 else if(keccak256(bytes(center)) == keccak256(bytes("bancor")))
                 {
-                      amountOutFinal=amountOut;
+                      
+                      IBancorNetwork bancorNetwork = getBancorNetworkContract();
+
+          
+                    address[] memory path = bancorNetwork.conversionPath(IERC20Token(tokenIn),IERC20Token(tokenOut) );
+                    uint minReturn = bancorNetwork.rateByPath( path, amountIn );
+
+                    if(minReturn>=amountOut)
+                    {
+
+                        amountOutFinal = bancorNetwork.convertByPath{value: amountIn}(
+                                                                    path,
+                                                                    amountIn,
+                                                                    minReturn,
+                                                                    address(this),
+                                                                    address(0x0),
+                                                                    0
+                                                                );
+
+
+                       // amountOutFinal=minReturn;
+                    }
+                    else
+                    {
+                        amountOutFinal=amountOut;
+                    }
+
+                      
                 }
                 else
                 {

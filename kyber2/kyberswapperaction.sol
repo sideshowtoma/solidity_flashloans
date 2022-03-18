@@ -41,10 +41,6 @@ contract kyberswapperaction
                                    
                                   console.log("'%d' ==> '%d'",i, amounts_out[i]);
                             }
-
-                             
-
-
                               
 
                                 dmmRouter.swapTokensForExactTokens(

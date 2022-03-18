@@ -1,6 +1,6 @@
 pragma solidity >= 0.8.4;
 
-import './interfaces/IContractRegistry.sol';
+import './interfaces/IContractRegistry.sol'; 
 import './interfaces/IBancorNetwork.sol';
 
 
