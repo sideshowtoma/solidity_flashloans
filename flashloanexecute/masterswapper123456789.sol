@@ -4,6 +4,14 @@ import "../avvee/contracts/v2/aave/FlashLoanReceiverBaseV2.sol";
 import "../avvee/interfaces/v2/ILendingPoolAddressesProviderV2.sol";
 import "../avvee/interfaces/v2/ILendingPoolV2.sol";
 
+//uniswap
+pragma abicoder v2;
+
+import '../uniswap/contracts/libraries/TransferHelper.sol';
+import '../uniswap/contracts/interfaces/ISwapRouter.sol';
+
+
+
 contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
 
     using SafeMath for uint256;
@@ -21,6 +29,7 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
 
     mapping (address=>uint256) public balances_are_hahah;
     mapping (string=>string) public transaction_happen;
+    mapping (string=>uint256) public counter_tracker;
 
 
     struct transactionsmine
@@ -39,11 +48,18 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
 
     }
 
-     transactionsmine public current_items;
 
-    constructor(address _addressProvider) public FlashLoanReceiverBaseV2(_addressProvider)
+ISwapRouter public immutable UniSwapRouter;
+
+
+    
+
+     //transactionsmine public current_items;
+
+    constructor(address _addressProvider,ISwapRouter _UniSwapRouter) public FlashLoanReceiverBaseV2(_addressProvider)
     {
         owner_ni_nani_mazee_ehh=msg.sender;
+        UniSwapRouter=_UniSwapRouter;
     }
 
     /**
@@ -68,24 +84,26 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
         // This contract now has the funds requested.
         // Your logic goes here.
         //
+     //transactionsmine memory current_items_here=current_items;
+            transactionsmine memory current_items_here=abi.decode(params, (transactionsmine));
+
+        uint256 amountOutFinal0=swap_execute5655455(current_items_here.transaction1_center,
+                            current_items_here.transaction1_amount_in, 
+                            current_items_here.transaction1_amount_out,
+                            current_items_here.transaction1_address_in,
+                            current_items_here.transaction1_address_out);
 
 
-        uint256 amountOutFinal0=swap_execute5655455(current_items.transaction1_center,
-                            current_items.transaction1_amount_in, 
-                            current_items.transaction1_amount_out,
-                            current_items.transaction1_address_in,
-                            current_items.transaction1_address_out);
-
-
-        uint256 amountOutFinal1=swap_execute5655455(current_items.transaction2_center,
+        uint256 amountOutFinal1=swap_execute5655455(current_items_here.transaction2_center,
                             amountOutFinal0, 
-                            current_items.transaction2_amount_out,
-                            current_items.transaction2_address_in,
-                            current_items.transaction2_address_out);
+                            current_items_here.transaction2_amount_out,
+                            current_items_here.transaction2_address_in,
+                            current_items_here.transaction2_address_out);
        
-                transactionsminearrayclone[transactionsmine_counterclone]=current_items;
+                transactionsminearrayclone[transactionsmine_counterclone]=current_items_here;
                 transactionsmine_counterclone++;
 
+                counter_tracker["transactionsmine_counterclone"]=transactionsmine_counterclone;
 
         // At the end of your logic above, this contract owes
         // the flashloaned amounts + premiums.
@@ -102,13 +120,14 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
     }
 
     function _flashloan(address[] memory assets, 
-                        uint256[] memory amounts
+                        uint256[] memory amounts,
+                        transactionsmine memory transactionsmine_this
     ) internal
     {
         address receiverAddress = address(this);
 
         address onBehalfOf = address(this);
-        bytes memory params = "";
+        bytes memory params = abi.encode(transactionsmine_this);
         uint16 referralCode = 0;
 
         uint256[] memory modes = new uint256[](assets.length);
@@ -163,7 +182,7 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
 
                 transactionsminearray[transactionsmine_counter]=transactionsmine_this;
                 transactionsmine_counter++;
-
+                counter_tracker["transactionsmine_counter"]=transactionsmine_counter;
 
 
 
@@ -174,9 +193,9 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
                     uint256[] memory amounts = new uint256[](1);
                     amounts[0] = transaction1_amount_in;
 
-                    current_items=transactionsmine_this;
+                    //current_items=transactionsmine_this;
 
-                    _flashloan(assets,  amounts);
+                    _flashloan(assets,  amounts,transactionsmine_this);
                     
         }
   
@@ -190,7 +209,24 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
                 }
                 else if(keccak256(bytes(center)) == keccak256(bytes("uniswap")))
                 {
-                      amountOutFinal=amountOut;
+                    TransferHelper.safeApprove(tokenIn, address(UniSwapRouter), amountIn);
+
+
+                    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+                                                                        tokenIn: tokenIn,
+                                                                        tokenOut: tokenOut,
+                                                                        fee: 3000,
+                                                                        recipient: address(this),
+                                                                        deadline: block.timestamp+90,
+                                                                        amountIn: amountIn,
+                                                                        amountOutMinimum: amountOut,
+                                                                        sqrtPriceLimitX96: 0
+                                                                    });
+
+                                                                // The call to `exactInputSingle` executes the swap.
+                                                                amountOutFinal = UniSwapRouter.exactInputSingle(params);
+
+                     // amountOutFinal=amountOut;
                 }
                 else if(keccak256(bytes(center)) == keccak256(bytes("kyberswap")))
                 {
@@ -233,6 +269,7 @@ contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
             {
                  token.transfer(to, amount);
 
+                 balances_are_hahah[address(token)]=   balances_are_hahah[address(token)]-amount;//adjust amount on withdraw
                  transaction_happen[tracker]="success.";
             }
             else
