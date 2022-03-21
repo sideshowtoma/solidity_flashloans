@@ -23,6 +23,7 @@ import "../kyber2/interfaces/IDMMFactory.sol";
 import '../bancor/interfaces/IContractRegistry.sol'; 
 import '../bancor/interfaces/IBancorNetwork.sol';
 
+import "hardhat/console.sol";
 
 contract masterswapper123456789 is FlashLoanReceiverBaseV2, Withdrawable {
 
@@ -73,8 +74,14 @@ ISwapRouter public immutable UniSwapRouter;
 
      //transactionsmine public current_items;
 
-    constructor(address _addressProvider,ISwapRouter _UniSwapRouter,IUniswapV2Router02  _SushiUniRouter ,IDMMRouter02 _KeyberdmmRouter,IContractRegistry _BancorcontractRegistry ) public FlashLoanReceiverBaseV2(_addressProvider)
+    constructor(address _addressProvider,
+                        ISwapRouter _UniSwapRouter,
+                        IUniswapV2Router02  _SushiUniRouter ,
+                        IDMMRouter02 _KeyberdmmRouter,
+                        IContractRegistry _BancorcontractRegistry ) public FlashLoanReceiverBaseV2(_addressProvider)
     {
+        console.log("ROUTER SET START");
+
         //uni
         owner_ni_nani_mazee_ehh=msg.sender;
         UniSwapRouter=_UniSwapRouter;
@@ -89,6 +96,7 @@ ISwapRouter public immutable UniSwapRouter;
         //bancor
         contractRegistry=_BancorcontractRegistry;
         
+        console.log("ROUTER SET DONE");
     }
 
 
@@ -117,12 +125,17 @@ ISwapRouter public immutable UniSwapRouter;
         address initiator,
         bytes calldata params
     ) external override returns (bool) {
+
+         console.log("executeOperation start");
+
         //
         // This contract now has the funds requested.
         // Your logic goes here.
         //
      //transactionsmine memory current_items_here=current_items;
             transactionsmine memory current_items_here=abi.decode(params, (transactionsmine));
+
+              console.log("1. center '%s' ['%s'] then ['%s']",current_items_here.transaction1_center,uintToStringIkoNiniKinuthia(current_items_here.transaction1_amount_in),uintToStringIkoNiniKinuthia(current_items_here.transaction1_amount_out));
 
         uint256 amountOutFinal0=swap_execute5655455(current_items_here.transaction1_center,
                             current_items_here.transaction1_amount_in, 
@@ -131,12 +144,15 @@ ISwapRouter public immutable UniSwapRouter;
                             current_items_here.transaction1_address_out);
 
 
+console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_center,uintToStringIkoNiniKinuthia(current_items_here.transaction2_amount_in),uintToStringIkoNiniKinuthia(current_items_here.transaction2_amount_out));            
+       
         uint256 amountOutFinal1=swap_execute5655455(current_items_here.transaction2_center,
                             amountOutFinal0, 
                             current_items_here.transaction2_amount_out,
                             current_items_here.transaction2_address_in,
                             current_items_here.transaction2_address_out);
-       
+
+                
                 transactionsminearrayclone[transactionsmine_counterclone]=current_items_here;
                 transactionsmine_counterclone++;
 
@@ -154,6 +170,8 @@ ISwapRouter public immutable UniSwapRouter;
         }
 
         return true;
+
+         console.log("executeOperation end");
     }
 
     function _flashloan(address[] memory assets, 
@@ -161,6 +179,7 @@ ISwapRouter public immutable UniSwapRouter;
                         transactionsmine memory transactionsmine_this
     ) internal
     {
+        console.log("_flashloan start");
         address receiverAddress = address(this);
 
         address onBehalfOf = address(this);
@@ -183,6 +202,8 @@ ISwapRouter public immutable UniSwapRouter;
             params,
             referralCode
         );
+
+        console.log("_flashloan end");
     }
 
 
@@ -203,6 +224,8 @@ ISwapRouter public immutable UniSwapRouter;
         {
             
            
+           console.log("initiate_loan_and_deals START");
+
           transactionsmine memory transactionsmine_this=  transactionsmine(
                                                                                     transaction1_center,
                                                                                     transaction1_address_in,
@@ -221,7 +244,7 @@ ISwapRouter public immutable UniSwapRouter;
                 transactionsmine_counter++;
                 counter_tracker["transactionsmine_counter"]=transactionsmine_counter;
 
-
+                console.log("initiate_loan_and_deals MID");
 
                 //get the flash loan
                     address[] memory assets = new address[](1);
@@ -233,28 +256,68 @@ ISwapRouter public immutable UniSwapRouter;
                     //current_items=transactionsmine_this;
 
                     _flashloan(assets,  amounts,transactionsmine_this);
+
+                    console.log("initiate_loan_and_deals end");
                     
         }
   
 
+ function uintToStringIkoNiniKinuthia(
+  uint256 _i
+)
+  internal
+  pure
+  returns (string memory str)
+{
+  if (_i == 0)
+  {
+    return "0";
+  }
+  uint256 j = _i;
+  uint256 length;
+  while (j != 0)
+  {
+    length++;
+    j /= 10;
+  }
+  bytes memory bstr = new bytes(length);
+  uint256 k = length;
+  j = _i;
+  while (j != 0)
+  {
+    bstr[--k] = bytes1(uint8(48 + j % 10));
+    j /= 10;
+  }
+  str = string(bstr);
+}
+
+   
 
         function swap_execute5655455(string memory center,uint256 amountIn, uint256 amountOut, address tokenIn, address tokenOut) internal returns ( uint256 amountOutFinal)
         {
                 if(keccak256(bytes(center)) == keccak256(bytes("sushi")))
                 {
 
+                     console.log("sushi start");    
+
                     address[] memory path = new address[](2);
                     path[0] = tokenIn;
                     path[1] = tokenOut;
-                    uint amountOut_sushi =SushiUniRouter.getAmountsOut(amountIn, path)[0];
+                    uint amountOut_sushi =SushiUniRouter.getAmountsOut(amountIn, path)[1];
 
+
+                     console.log("[sushi] amountIn: '%s' amountOut: '%s'",uintToStringIkoNiniKinuthia(amountIn),uintToStringIkoNiniKinuthia(amountOut));    
+                     console.log("[sushi] amountOut_sushi: '%s' ",uintToStringIkoNiniKinuthia(amountOut_sushi));    
 
                      //make sure the out is more than what u anticipate
                      if(amountOut_sushi>=amountOut)
                      {
+                         console.log("[sushi] yes is greater");  
                             //approve
                              IERC20(tokenIn).approve(address(SushiUniRouter), amountIn);
                              IERC20(tokenOut).approve(address(SushiUniRouter), amountOut_sushi);
+
+                        console.log("[sushi] approved");  
 
                             SushiUniRouter.swapExactTokensForTokens(
                                                         amountIn, 
@@ -266,14 +329,18 @@ ISwapRouter public immutable UniSwapRouter;
 
 
                                                     amountOutFinal=amountOut_sushi;
+                          console.log("[sushi] executed");  
 
                      } 
                      else
                      {
+                         console.log("[sushi] yes is lesser");  
                             amountOutFinal=amountOut;
                      }  
 
-                        
+
+                     console.log("[sushi] done");   
+
                 }
                 else if(keccak256(bytes(center)) == keccak256(bytes("uniswap")))
                 {
@@ -332,7 +399,7 @@ ISwapRouter public immutable UniSwapRouter;
                     if(minReturn>=amountOut)
                     {
 
-                        amountOutFinal = bancorNetwork.convertByPath{value: amountIn}(
+                        amountOutFinal = bancorNetwork.convertByPath{value: msg.value}(
                                                                     path,
                                                                     amountIn,
                                                                     minReturn,
