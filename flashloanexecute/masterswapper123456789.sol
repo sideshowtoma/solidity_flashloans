@@ -344,9 +344,11 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                 }
                 else if(keccak256(bytes(center)) == keccak256(bytes("uniswap")))
                 {
+                      console.log("uniswap start");   
                     TransferHelper.safeApprove(tokenIn, address(UniSwapRouter), amountIn);
 
-
+                      console.log("[uniswap] amountIn: '%s' amountOut: '%s'",uintToStringIkoNiniKinuthia(amountIn),uintToStringIkoNiniKinuthia(amountOut));    
+                      
                     ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
                                                                         tokenIn: tokenIn,
                                                                         tokenOut: tokenOut,
@@ -361,18 +363,24 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                                                                 // The call to `exactInputSingle` executes the swap.
                                                                 amountOutFinal = UniSwapRouter.exactInputSingle(params);
 
+                            console.log("[uniswap] amountOutFinal: '%s' ",uintToStringIkoNiniKinuthia(amountOutFinal));    
+
                      // amountOutFinal=amountOut;
+                       console.log("uniswap end");   
                 }
                 else if(keccak256(bytes(center)) == keccak256(bytes("kyberswap")))
                 {
+                     console.log("kyberswap start");   
                             IERC20[] memory path = new IERC20[](2);
                             path[0] = IERC20(tokenIn); // assuming core is specified as IERC20
                             path[1] = IERC20(tokenOut); // assuming usdt is specified as IERC20
 
+                    console.log("[kyberswap] amountIn: '%s' amountOut: '%s'",uintToStringIkoNiniKinuthia(amountIn),uintToStringIkoNiniKinuthia(amountOut));    
+                    
                             address[] memory poolsPath = dmmFactory.getPools(IERC20(tokenIn), IERC20(tokenOut));
                             require(IERC20(tokenIn).approve(address(dmmRouter), amountIn), 'approve failed');
 
-                            
+                            console.log("kyberswap approved");   
                                     dmmRouter.swapTokensForExactTokens(
                                                                             amountIn, // 
                                                                             amountOut, // should be obtained via a price oracle, either off or on-chain
@@ -386,18 +394,27 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                             amountOutFinal=amountOut;
                            
                       //amountOutFinal=amountOut;
+                       console.log("kyberswap end");   
                 }
                 else if(keccak256(bytes(center)) == keccak256(bytes("bancor")))
                 {
-                      
+                        console.log("bancor start");    
+
                       IBancorNetwork bancorNetwork = getBancorNetworkContract();
 
           
                     address[] memory path = bancorNetwork.conversionPath(IERC20Token(tokenIn),IERC20Token(tokenOut) );
                     uint minReturn = bancorNetwork.rateByPath( path, amountIn );
 
+                    console.log("[bancor] amountIn: '%s' amountOut: '%s'",uintToStringIkoNiniKinuthia(amountIn),uintToStringIkoNiniKinuthia(amountOut));    
+                     console.log("[bancor] minReturn: '%s' ",uintToStringIkoNiniKinuthia(minReturn));    
+
+
                     if(minReturn>=amountOut)
                     {
+
+
+                        console.log("[bancor] yes is greater");  
 
                         amountOutFinal = bancorNetwork.convertByPath{value: msg.value}(
                                                                     path,
@@ -409,14 +426,21 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                                                                 );
 
 
-                       // amountOutFinal=minReturn;
+                       amountOutFinal=minReturn;
+
+                       console.log("[bancor] amountOutFinal: '%s' ",uintToStringIkoNiniKinuthia(amountOutFinal));    
+
                     }
                     else
                     {
-                        amountOutFinal=amountOut;
+                         amountOutFinal=amountOut;
+
+                        console.log("[bancor] yes is lesser");  
+
+                       
                     }
 
-                      
+                        console.log("bancor end");    
                 }
                 else
                 {
