@@ -300,9 +300,10 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
 
                      console.log("sushi start");    
 
-                    address[] memory path = new address[](2);
-                    path[0] = tokenIn;
-                    path[1] = tokenOut;
+                    address[] memory path = new address[](3);
+                    path[0] = address(0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9);
+                    path[1] = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+                    path[2] = address(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 
                                     /*
                                     IERC20(tokenIn).approve(address(SushiUniRouter), amountIn);
@@ -326,12 +327,12 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                                     console.log("[sushi] executed");  
                                     */
 
-                                                      
+                                                      /*
                                                       uint[] memory amountslookedatarray =SushiUniRouter.getAmountsOut(amountIn, path);
 
                                                       console.log("[sushi] amountslookedatarray.length: '%d' ",amountslookedatarray.length );
 
-                                                      uint amountOut_sushi=amountslookedatarray[1];
+                                                      uint amountOut_sushi=amountslookedatarray[2];
 
                                                       console.log("[sushi] amountIn: '%s' amountOut: '%s'",uintToStringIkoNiniKinuthia(amountIn),uintToStringIkoNiniKinuthia(amountOut));    
                                                       console.log("[sushi] amountOut_sushi: '%s' ",uintToStringIkoNiniKinuthia(amountOut_sushi));    
@@ -367,18 +368,20 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                                                                 console.log("[sushi] yes is lesser");  
                                                                     amountOutFinal=amountOut;
                                                             }  
-                                                         
+                                                         */
 
                      console.log("[sushi] done");   
 
                 }
                 else if(keccak256(bytes(center)) == keccak256(bytes("uniswap")))
                 {
+                    
                       console.log("uniswap start");   
                     TransferHelper.safeApprove(tokenIn, address(UniSwapRouter), amountIn);
 
                       console.log("[uniswap] amountIn: '%s' amountOut: '%s'",uintToStringIkoNiniKinuthia(amountIn),uintToStringIkoNiniKinuthia(amountOut));    
                       
+                      /*
                     ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
                                                                         tokenIn: tokenIn,
                                                                         tokenOut: tokenOut,
@@ -389,9 +392,27 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                                                                         amountOutMinimum: amountOut,
                                                                         sqrtPriceLimitX96: 0
                                                                     });
+            */
+
+ uint24   poolFee = 3000;
+
+
+ bytes memory data_path= abi.encodePacked(tokenIn, poolFee, 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, poolFee, tokenOut );
+
+             ISwapRouter.ExactInputParams memory params =
+                                            ISwapRouter.ExactInputParams({
+                                                path: data_path,
+                                                recipient:address(this),
+                                                deadline: block.timestamp+120,
+                                                amountIn: amountIn,
+                                                amountOutMinimum: 0
+                                            });
+
+
+                    
 
                                                                 // The call to `exactInputSingle` executes the swap.
-                                                                amountOutFinal = UniSwapRouter.exactInputSingle(params);
+                                                                amountOutFinal = UniSwapRouter.exactInput(params);
 
                             console.log("[uniswap] amountOutFinal: '%s' ",uintToStringIkoNiniKinuthia(amountOutFinal));    
 
@@ -403,14 +424,60 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                      console.log("kyberswap start");   
                             IERC20[] memory path = new IERC20[](2);
                             path[0] = IERC20(tokenIn); // assuming core is specified as IERC20
-                            path[1] = IERC20(tokenOut); // assuming usdt is specified as IERC20
+                          //  path[1] = IERC20(0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48); // assuming usdt is specified as IERC20
+                           // path[2] = IERC20(0xdAC17F958D2ee523a2206206994597C13D831ec7); // assuming usdt is specified as IERC20
+                           // path[1] = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F); // assuming usdt is specified as IERC20
+                              path[1] = IERC20(tokenOut); // assuming usdt is specified as IERC20
 
                     console.log("[kyberswap] amountIn: '%s' amountOut: '%s'",uintToStringIkoNiniKinuthia(amountIn),uintToStringIkoNiniKinuthia(amountOut));    
                     
-                            address[] memory poolsPath = dmmFactory.getPools(IERC20(tokenIn), IERC20(tokenOut));
+                    /*
+                      address[] memory poolsPath = dmmFactory.getPools(IERC20(tokenIn), IERC20(tokenOut));
+                        console.log("poolsPath length: '%d':",poolsPath.length);    
+                        */
+
+                    /*
+                        address[] memory  poolsPath = dmmFactory.getPools(IERC20(tokenIn), IERC20(tokenOut));
+                         console.log("poolsPath length: '%d':",poolsPath.length);    
+                        */
+
+                   
+                    address   poolAddress1 = dmmFactory.getUnamplifiedPool(IERC20(tokenIn), IERC20(tokenOut));
+                 //   address  poolAddress2 = dmmFactory.getUnamplifiedPool(IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F), IERC20(tokenOut));
+                    
+                     
+                        address[] memory poolsPath= new address[](1) ;
+                        poolsPath[0]=address(0x61639D6eC06C13a96B5eB9560b359D7c648C7759);
+                  
+                    /*
+                    address[] memory  poolAddress1 = dmmFactory.getPools(IERC20(0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9), IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2));
+                    address[] memory poolAddress2 = dmmFactory.getPools(IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2), IERC20(0xdAC17F958D2ee523a2206206994597C13D831ec7));
+                    address[] memory poolAddress3 = dmmFactory.getPools(IERC20(0xdAC17F958D2ee523a2206206994597C13D831ec7), IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F));
+                    
+                       console.log("poolAddress1 length: '%d':",poolAddress1.length);    
+                       console.log("poolAddress2 length: '%d':",poolAddress2.length);    
+                       console.log("poolAddress3 length: '%d':",poolAddress3.length);    
+                        
+
+                    address[] memory poolsPath= new address[](3) ;
+                    poolsPath[0]=address(0xD75EA151a61d06868E31F8988D28DFE5E9df57B4);
+                    poolsPath[1]=address(0x74C99F3f5331676f6AEc2756e1F39b4FC029a83E);
+                    poolsPath[2]=address(0x06Df3b2bbB68adc8B0e302443692037ED9f91b42);
+                    */
+                    
+                           // address[] memory poolsPath = dmmFactory.getPools(IERC20(tokenIn), IERC20(tokenOut));
+                            /*
+                            address[] memory poolsPath= new address[](3) ;
+                            poolsPath[0]=address(0xD75EA151a61d06868E31F8988D28DFE5E9df57B4);
+                            poolsPath[1]=address(0x96646936b91d6B9D7D0c47C496AfBF3D6ec7B6f8);
+                            poolsPath[2]=address(0x06Df3b2bbB68adc8B0e302443692037ED9f91b42);
+                            */
                             require(IERC20(tokenIn).approve(address(dmmRouter), amountIn), 'approve failed');
 
-                            console.log("kyberswap approved");   
+                            console.log("kyberswap approved");  
+                              //console.log("getAmountsIn 1 '%d': ",dmmRouter.getAmountsIn(amountOut, poolsPath, path)[0]);    
+                             // console.log("getAmountsIn 2 '%d': ",dmmRouter.getAmountsIn(amountOut, poolsPath, path)[1]);    
+  
                                     dmmRouter.swapTokensForExactTokens(
                                                                             amountIn, // 
                                                                             amountOut, // should be obtained via a price oracle, either off or on-chain
@@ -428,6 +495,7 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                 }
                 else if(keccak256(bytes(center)) == keccak256(bytes("bancor")))
                 {
+                    /*
                         console.log("bancor start");    
 
                       IBancorNetwork bancorNetwork = getBancorNetworkContract();
@@ -471,13 +539,15 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                     }
 
                         console.log("bancor end");    
+
+                        */
                 }
                 else
                 {
                      amountOutFinal=amountOut;
                 }
 
-
+                
 
 
         }
