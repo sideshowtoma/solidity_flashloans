@@ -303,41 +303,71 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                     address[] memory path = new address[](2);
                     path[0] = tokenIn;
                     path[1] = tokenOut;
-                    uint amountOut_sushi =SushiUniRouter.getAmountsOut(amountIn, path)[1];
+
+                                    /*
+                                    IERC20(tokenIn).approve(address(SushiUniRouter), amountIn);
+                                      IERC20(tokenOut).approve(address(SushiUniRouter), amountOut);
+
+                                  console.log("[sushi] approved");  
+
+                                      SushiUniRouter.swapExactTokensForTokens(
+                                                                  amountIn, 
+                                                                  amountOut,
+                                                                  path, 
+                                                                  address(this), 
+                                                                  block.timestamp + 120
+                                                              );
 
 
-                     console.log("[sushi] amountIn: '%s' amountOut: '%s'",uintToStringIkoNiniKinuthia(amountIn),uintToStringIkoNiniKinuthia(amountOut));    
-                     console.log("[sushi] amountOut_sushi: '%s' ",uintToStringIkoNiniKinuthia(amountOut_sushi));    
+                                                              amountOutFinal=amountOut;
 
-                     //make sure the out is more than what u anticipate
-                     if(amountOut_sushi>=amountOut)
-                     {
-                         console.log("[sushi] yes is greater");  
-                            //approve
-                             IERC20(tokenIn).approve(address(SushiUniRouter), amountIn);
-                             IERC20(tokenOut).approve(address(SushiUniRouter), amountOut_sushi);
+                                    console.log("[sushi] amountOutFinal: '%s' ",uintToStringIkoNiniKinuthia(amountOutFinal));    
 
-                        console.log("[sushi] approved");  
+                                    console.log("[sushi] executed");  
+                                    */
 
-                            SushiUniRouter.swapExactTokensForTokens(
-                                                        amountIn, 
-                                                        amountOut_sushi,
-                                                        path, 
-                                                        address(this), 
-                                                        block.timestamp + 120
-                                                    );
+                                                      
+                                                      uint[] memory amountslookedatarray =SushiUniRouter.getAmountsOut(amountIn, path);
+
+                                                      console.log("[sushi] amountslookedatarray.length: '%d' ",amountslookedatarray.length );
+
+                                                      uint amountOut_sushi=amountslookedatarray[1];
+
+                                                      console.log("[sushi] amountIn: '%s' amountOut: '%s'",uintToStringIkoNiniKinuthia(amountIn),uintToStringIkoNiniKinuthia(amountOut));    
+                                                      console.log("[sushi] amountOut_sushi: '%s' ",uintToStringIkoNiniKinuthia(amountOut_sushi));    
+
+                                                      //make sure the out is more than what u anticipate
+                                                      if(amountOut_sushi>=amountOut)
+                                                      {
+                                                          console.log("[sushi] yes is greater");  
+                                                              //approve
+                                                              IERC20(tokenIn).approve(address(SushiUniRouter), amountIn);
+                                                              IERC20(tokenOut).approve(address(SushiUniRouter), amountOut_sushi);
+
+                                                          console.log("[sushi] approved");  
+
+                                                              SushiUniRouter.swapExactTokensForTokens(
+                                                                                          amountIn, 
+                                                                                          amountOut_sushi,
+                                                                                          path, 
+                                                                                          address(this), 
+                                                                                          block.timestamp + 120
+                                                                                      );
 
 
-                                                    amountOutFinal=amountOut_sushi;
-                          console.log("[sushi] executed");  
+                                                                                      amountOutFinal=amountOut_sushi;
 
-                     } 
-                     else
-                     {
-                         console.log("[sushi] yes is lesser");  
-                            amountOutFinal=amountOut;
-                     }  
+                                                           
 
+                                                            console.log("[sushi] executed");  
+
+                                                            } 
+                                                            else
+                                                            {
+                                                                console.log("[sushi] yes is lesser");  
+                                                                    amountOutFinal=amountOut;
+                                                            }  
+                                                         
 
                      console.log("[sushi] done");   
 
