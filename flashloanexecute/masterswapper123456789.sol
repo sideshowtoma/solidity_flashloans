@@ -382,6 +382,7 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                       console.log("[uniswap] amountIn: '%s' amountOut: '%s'",uintToStringIkoNiniKinuthia(amountIn),uintToStringIkoNiniKinuthia(amountOut));    
                       
                       /*
+                      
                     ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
                                                                         tokenIn: tokenIn,
                                                                         tokenOut: tokenOut,
@@ -389,15 +390,20 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                                                                         recipient: address(this),
                                                                         deadline: block.timestamp+120,
                                                                         amountIn: amountIn,
-                                                                        amountOutMinimum: amountOut,
+                                                                        amountOutMinimum: 0,
                                                                         sqrtPriceLimitX96: 0
                                                                     });
-            */
+    */
+
 
  uint24   poolFee = 3000;
 
 
- bytes memory data_path= abi.encodePacked(tokenIn, poolFee, 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, poolFee, tokenOut );
+// bytes memory data_path= abi.encodePacked(tokenIn, poolFee, 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599, poolFee, 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, poolFee, tokenOut );
+
+//bytes memory data_path= abi.encodePacked(tokenIn, poolFee, 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, poolFee, tokenOut );
+
+bytes memory data_path= abi.encodePacked(tokenIn, poolFee, 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, poolFee, tokenOut );
 
              ISwapRouter.ExactInputParams memory params =
                                             ISwapRouter.ExactInputParams({
@@ -408,11 +414,8 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                                                 amountOutMinimum: 0
                                             });
 
-
-                    
-
-                                                                // The call to `exactInputSingle` executes the swap.
-                                                                amountOutFinal = UniSwapRouter.exactInput(params);
+                            // The call to `exactInputSingle` executes the swap.
+                            amountOutFinal = UniSwapRouter.exactInput(params);
 
                             console.log("[uniswap] amountOutFinal: '%s' ",uintToStringIkoNiniKinuthia(amountOutFinal));    
 
@@ -495,13 +498,21 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
                 }
                 else if(keccak256(bytes(center)) == keccak256(bytes("bancor")))
                 {
-                    /*
+                    
                         console.log("bancor start");    
 
                       IBancorNetwork bancorNetwork = getBancorNetworkContract();
 
           
-                    address[] memory path = bancorNetwork.conversionPath(IERC20Token(tokenIn),IERC20Token(tokenOut) );
+                   address[] memory path = bancorNetwork.conversionPath(IERC20Token(tokenIn),IERC20Token(tokenOut) );
+                   
+
+/*
+                    address[] memory path = new address[](2);
+                      path[0] = address(tokenIn);
+                      path[1] = address(tokenOut);
+
+              */
                     uint minReturn = bancorNetwork.rateByPath( path, amountIn );
 
                     console.log("[bancor] amountIn: '%s' amountOut: '%s'",uintToStringIkoNiniKinuthia(amountIn),uintToStringIkoNiniKinuthia(amountOut));    
@@ -514,14 +525,25 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
 
                         console.log("[bancor] yes is greater");  
 
-                        amountOutFinal = bancorNetwork.convertByPath{value: msg.value}(
+
+                        bancorNetwork.convertByPath{value: msg.value}(
                                                                     path,
                                                                     amountIn,
                                                                     minReturn,
                                                                     address(this),
-                                                                    address(0x0),
+                                                                    address(0),
                                                                     0
                                                                 );
+
+
+                                          /*
+
+                                          amountOutFinal = bancorNetwork.convert{value: msg.value}(
+                                                                    path,
+                                                                    amountIn,
+                                                                    minReturn
+                                                                );
+                                                                */
 
 
                        amountOutFinal=minReturn;
@@ -540,7 +562,7 @@ console.log("2. center '%s' ['%s'] then ['%s']",current_items_here.transaction2_
 
                         console.log("bancor end");    
 
-                        */
+                     
                 }
                 else
                 {
