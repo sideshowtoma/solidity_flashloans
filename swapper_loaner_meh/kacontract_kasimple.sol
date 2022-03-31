@@ -33,7 +33,7 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
     IDMMRouter02 public dmmRouter;
     IDMMFactory public dmmFactory;
 
-    
+    uint24 public poolFee = 3000;
 
     struct base_meta
     {
@@ -117,11 +117,11 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
  exchange_tokens_specific_many memory my_trans_all=abi.decode(params, (exchange_tokens_specific_many));
  exchange_tokens_specific[] memory my_trans=my_trans_all.all_exchange_tokens_specific;
 
- console.log("my_trans exchange '%d' ",my_trans.length );
+ //console.log("my_trans exchange '%d' ",my_trans.length );
  exchange_tokens_specific memory first_one=my_trans[0];
 
-                            console.log("first_one exchange '%s' and is '%d' long ",first_one.exchange ,first_one.exchange_swaps.length );
-                            console.log("loan '%d'  ",first_one.exchange_swaps[0].swapAmount );
+                           // console.log("first_one exchange '%s' and is '%d' long ",first_one.exchange ,first_one.exchange_swaps.length );
+                           // console.log("loan '%d'  ",first_one.exchange_swaps[0].swapAmount );
 
 
 
@@ -129,21 +129,7 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
         {
                     exchange_tokens_specific memory thisonehere=my_trans[i];
                    
-                if(keccak256(bytes(thisonehere.exchange)) == keccak256(bytes("uniswap")))
-                {
-                     console.log("uniswap thisonehere '%s' and is '%d' long ",thisonehere.exchange ,thisonehere.exchange_swaps.length );
-
-                }
-                else if(keccak256(bytes(thisonehere.exchange)) == keccak256(bytes("sushiswap")))
-                {
-                         console.log("sushiswap thisonehere '%s' and is '%d' long ",thisonehere.exchange ,thisonehere.exchange_swaps.length );
-
-                }
-                else if(keccak256(bytes(thisonehere.exchange)) == keccak256(bytes("kyberswap")))
-                {
-                     console.log("kyberswap thisonehere '%s' and is '%d' long ",thisonehere.exchange ,thisonehere.exchange_swaps.length );
-
-                }
+                    swap_execute5655455(thisonehere.exchange,thisonehere.exchange_swaps);
 
 
                           
@@ -167,6 +153,159 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
 
         // console.log("executeOperation end");
     }
+
+
+
+        function swap_execute5655455(string memory center,base_meta[] memory my_array_swaps) internal returns ( uint256 amountOutFinal)
+        {
+
+            console.log("center '%s' and is '%d' long ",center ,my_array_swaps.length );
+
+
+                if(keccak256(bytes(center)) == keccak256(bytes("uniswap")))
+                {
+                    
+                    TransferHelper.safeApprove(my_array_swaps[0].tokenIn, address(UniSwapRouter), my_array_swaps[0].swapAmount);
+                   
+                    console.log("[uniswap] amountIn: '%s' amountOut: '%s'",uintToStringIkoNiniKinuthia(my_array_swaps[0].swapAmount),uintToStringIkoNiniKinuthia(my_array_swaps[ ((my_array_swaps.length)-1)  ].amountOut));    
+                    bytes memory data_path;
+                    if(my_array_swaps.length==1)
+                    {
+                        console.log("1"); 
+                        data_path= abi.encodePacked(my_array_swaps[0].tokenIn, poolFee, my_array_swaps[0].tokenOut );
+                    }
+                    else if(my_array_swaps.length==2)
+                    {
+                         console.log("2"); 
+                         data_path= abi.encodePacked(my_array_swaps[0].tokenIn, poolFee, my_array_swaps[0].tokenOut, poolFee  ,my_array_swaps[1].tokenOut );
+                    }
+                    else if(my_array_swaps.length==3)
+                    {
+                        console.log("3"); 
+                         data_path= abi.encodePacked(my_array_swaps[0].tokenIn, poolFee, my_array_swaps[0].tokenOut, poolFee  ,my_array_swaps[1].tokenOut, poolFee  ,my_array_swaps[2].tokenOut );
+                    }
+                    else if(my_array_swaps.length==4)
+                    {
+                        console.log("4"); 
+                         data_path= abi.encodePacked(my_array_swaps[0].tokenIn, poolFee, my_array_swaps[0].tokenOut, poolFee  ,my_array_swaps[1].tokenOut, poolFee  ,my_array_swaps[2].tokenOut , poolFee  ,my_array_swaps[3].tokenOut );
+             
+                    }
+
+                    ISwapRouter.ExactInputParams memory params =
+                                            ISwapRouter.ExactInputParams({
+                                                path: data_path,
+                                                recipient:address(this),
+                                                deadline: block.timestamp+120,
+                                                amountIn: my_array_swaps[0].swapAmount,
+                                                amountOutMinimum:my_array_swaps[ ((my_array_swaps.length)-1)  ].amountOut
+                                            });
+
+                                amountOutFinal = UniSwapRouter.exactInput(params);
+                            console.log("[uniswap] amountOutFinal: '%s' ",uintToStringIkoNiniKinuthia(amountOutFinal));    
+
+
+
+                }
+                else if(keccak256(bytes(center)) == keccak256(bytes("sushiswap")))
+                {
+                    address[] memory path = new address[]( ( (my_array_swaps.length)+1 ) );
+                    path[0] = address(my_array_swaps[0].tokenIn);
+                    path[1] = address(my_array_swaps[0].tokenOut);
+
+                    IERC20(my_array_swaps[0].tokenIn).approve(address(SushiUniRouter), my_array_swaps[0].swapAmount);
+                    IERC20(my_array_swaps[0].tokenOut).approve(address(SushiUniRouter), my_array_swaps[0].amountOut);
+
+                    uint256 path_counter =2;
+
+                       for (uint256 i = 1; i < my_array_swaps.length ; i++) 
+                       {
+                                  path[ path_counter ] = address(my_array_swaps[i].tokenOut);
+                                    
+                                  IERC20(my_array_swaps[i].tokenOut).approve(address(SushiUniRouter), my_array_swaps[i].amountOut);
+                                    
+                                    path_counter++;
+                       }
+
+                                         SushiUniRouter.swapExactTokensForTokens(
+                                                                  my_array_swaps[0].swapAmount, 
+                                                                  my_array_swaps[ ((my_array_swaps.length)-1)  ].amountOut,
+                                                                  path, 
+                                                                  address(this), 
+                                                                  block.timestamp + 120
+                                                              );
+
+
+                                    amountOutFinal= my_array_swaps[ ((my_array_swaps.length)-1)  ].amountOut;
+
+                                    console.log("[sushi] amountOutFinal: '%s' ",uintToStringIkoNiniKinuthia(amountOutFinal));   
+
+                    
+
+                }
+                else if(keccak256(bytes(center)) == keccak256(bytes("kyberswap")))
+                {
+                     console.log("kyberswap start");  
+                        IERC20[] memory path = new IERC20[]( ( (my_array_swaps.length)+1 ) );
+                        path[0] = IERC20(my_array_swaps[0].tokenIn);
+                        path[1] = IERC20(my_array_swaps[0].tokenOut);
+
+                        address[] memory poolsPath= new address[]( my_array_swaps.length   ) ;
+                        poolsPath[0]=my_array_swaps[0].pool;
+
+                         
+                        require(IERC20(my_array_swaps[0].tokenIn).approve(address(dmmRouter),  my_array_swaps[0].swapAmount), 'approve failed');
+
+                    console.log("kyberswap approved");  
+
+
+                    uint256 path_counter =2;
+                    uint256 poolsPath_counter=1;
+
+         
+                       for (uint256 i = 1; i < my_array_swaps.length ; i++) 
+                       {
+                           
+                                path[ path_counter  ] = IERC20(my_array_swaps[i].tokenOut);
+                                poolsPath[ poolsPath_counter]=my_array_swaps[i].pool;
+                                require(IERC20(my_array_swaps[i].tokenOut).approve(address(dmmRouter),  my_array_swaps[i].swapAmount), 'approve failed');
+                            
+                                path_counter++;
+                                poolsPath_counter++;
+                       }
+                       
+               
+               console.log("kyberswap approved here");  
+
+                     uint256[] memory outs=dmmRouter.getAmountsOut(my_array_swaps[0].swapAmount, poolsPath, path);
+
+                        for (uint256 i = 0; i < outs.length ; i++) 
+                       {
+                           
+                                console.log("outs %d: %s",i,uintToStringIkoNiniKinuthia( outs[i]) );   
+                       }
+
+                     console.log("out is %s",uintToStringIkoNiniKinuthia( outs[ ((path.length)-1) ]));   
+                         console.log("kyberswap here");   
+
+                         dmmRouter.swapTokensForExactTokens(
+                                                                            my_array_swaps[0].swapAmount, // 
+                                                                            my_array_swaps[((my_array_swaps.length)-1)].amountOut, // should be obtained via a price oracle, either off or on-chain
+                                                                            poolsPath, // eg. [core-usdt-pool]
+                                                                            path,
+                                                                           address(this), 
+                                                                            block.timestamp + 120
+                                                                        );
+
+
+                            amountOutFinal=my_array_swaps[ ((my_array_swaps.length)-1)  ].amountOut;
+
+                    console.log("kyberswap end");   
+                         
+                }
+                
+                
+
+        }
 
 
      function _flashloan(address[] memory assets, 
@@ -207,6 +346,19 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
     }
 
 
+function transferERC20_now_hahaha(IERC20 token, address payable to, uint256 amount) public onlyOwner
+    {
+        
+            uint256 erc20balance = token.balanceOf(address(this));
+
+            if(amount <= erc20balance)
+            {
+                 token.transfer(to, amount);
+            }
+            
+       
+    }
+
    
    
 
@@ -245,7 +397,7 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
                 }
                 else
                 {
-                    console.log("my_trans exchange '%d' ",my_trans.length );
+                    //console.log("my_trans exchange '%d' ",my_trans.length );
                 }
 
                 //get the amounts to loan
@@ -254,6 +406,29 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
     }
 
 
+function uintToStringIkoNiniKinuthia(uint256 _i) internal pure returns (string memory str)
+{
+            if (_i == 0)
+            {
+                return "0";
+            }
+            uint256 j = _i;
+            uint256 length;
+            while (j != 0)
+            {
+                length++;
+                j /= 10;
+            }
+            bytes memory bstr = new bytes(length);
+            uint256 k = length;
+            j = _i;
+            while (j != 0)
+            {
+                bstr[--k] = bytes1(uint8(48 + j % 10));
+                j /= 10;
+            }
+            str = string(bstr);
+            }
 
 
 }
