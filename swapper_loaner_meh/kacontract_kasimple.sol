@@ -76,7 +76,6 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
 
     constructor(address _addressProvider, ISwapRouter _UniSwapRouter, IUniswapV2Router02  _SushiUniRouter , IDMMRouter02 _KeyberdmmRouter, IContractRegistry _BancorcontractRegistry ) public FlashLoanReceiverBaseV2(_addressProvider)
     {
-        console.log("ROUTER SET START");
         //uni
         UniSwapRouter=_UniSwapRouter;
         //sushi
@@ -89,17 +88,14 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
         console.log("ROUTER SET DONE");
     }
 
-    function getBancorNetworkContract() public returns(IBancorNetwork) { return IBancorNetwork(contractRegistry.addressOf(bancorNetworkName)); }
-
+   
 
      function executeOperation( address[] calldata assets,uint256[] calldata amounts, uint256[] calldata premiums, address initiator, bytes calldata params ) external override returns (bool) 
-     {
-
-     
-                            exchange_tokens_specific_many memory my_trans_all=abi.decode(params, (exchange_tokens_specific_many));
-                            exchange_tokens_specific[] memory my_trans=my_trans_all.all_exchange_tokens_specific;
+     {          
+                            exchange_tokens_specific[] memory my_trans=abi.decode(params, (exchange_tokens_specific_many)).all_exchange_tokens_specific;
                             
-                            console.log("loaned amounts '%d' ",  IERC20(assets[0]).balanceOf(address(this))   );       
+                                    console.log("loaned amounts '%d' ",  IERC20(assets[0]).balanceOf(address(this))   );      
+                           
 
                                     for(uint i=0;i<my_trans.length;i++)
                                     {
@@ -110,7 +106,7 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
 
                                                     
                                     }
-                                    console.log("executeOperation--");
+                                    console.log("executeOperation now just repay loan");
 
         
         for (uint256 i = 0; i < assets.length; i++) {
@@ -134,24 +130,24 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
                 if(keccak256(bytes(center)) == keccak256(bytes("bancor")))
                 {
                         console.log("bancor start");    
-                        //IBancorNetwork bancorNetwork = getBancorNetworkContract();
+                        IBancorNetwork bancorNetwork =  IBancorNetwork(contractRegistry.addressOf(bancorNetworkName));
           
                         
 
-                        uint minReturn = getBancorNetworkContract().rateByPath( getBancorNetworkContract().conversionPath(IERC20Token(my_array_swaps[0].tokenIn),IERC20Token(my_array_swaps[0].tokenOut) ), my_array_swaps[0].swapAmount );
+                        uint minReturn = bancorNetwork.rateByPath( bancorNetwork.conversionPath(IERC20Token(my_array_swaps[0].tokenIn),IERC20Token(my_array_swaps[0].tokenOut) ), my_array_swaps[0].swapAmount );
                         console.log("[bancor] minReturn: '%d' ",minReturn); 
 
                                     if(minReturn>= my_array_swaps[0].amountOut )
                                     {
-                                      //  my_array_swaps[0].tokenIn.safeApprove( getBancorNetworkContract(),  my_array_swaps[0].swapAmount);
+                                     
 
-                                     IERC20(my_array_swaps[0].tokenIn).approve(address(getBancorNetworkContract()), my_array_swaps[0].swapAmount);
+                                     IERC20(my_array_swaps[0].tokenIn).approve(address(bancorNetwork), my_array_swaps[0].swapAmount);
 
                                             console.log("[bancor] yes is greater");  
-                                            getBancorNetworkContract().convertByPath{value: msg.value}(
-                                                                                        getBancorNetworkContract().conversionPath(IERC20Token(my_array_swaps[0].tokenIn),IERC20Token(my_array_swaps[0].tokenOut) ),
+                                            bancorNetwork.convertByPath{value: msg.value}(
+                                                                                        bancorNetwork.conversionPath(IERC20Token(my_array_swaps[0].tokenIn),IERC20Token(my_array_swaps[0].tokenOut) ),
                                                                                         my_array_swaps[0].swapAmount,
-                                                                                        minReturn,
+                                                                                        my_array_swaps[0].amountOut,
                                                                                         address(this),
                                                                                         address(0),
                                                                                         0
@@ -170,10 +166,9 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
                 }    
                 else if(keccak256(bytes(center)) == keccak256(bytes("uniswap")))
                 {
-                    /*
+                    
                     TransferHelper.safeApprove(my_array_swaps[0].tokenIn, address(UniSwapRouter), my_array_swaps[0].swapAmount);
-                     
-
+                 
                     console.log("[uniswap] amountIn: '%d' amountOut: '%d'",my_array_swaps[0].swapAmount,my_array_swaps[ ((my_array_swaps.length)-1)  ].amountOut);    
 
 
@@ -206,14 +201,14 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
                                                     ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
                                                                                                         path:data_path,
                                                                                                         recipient:address(this),
-                                                                                                        deadline: block.timestamp+120,
+                                                                                                        deadline: block.timestamp+60,
                                                                                                         amountIn: my_array_swaps[0].swapAmount,
-                                                                                                        amountOutMinimum:0
+                                                                                                        amountOutMinimum:my_array_swaps[ ((my_array_swaps.length)-1)  ].amountOut
                                                                                                     });
                                                
-                                                            amountOutFinal = UniSwapRouter.exactInput(params);
+                                                        amountOutFinal = UniSwapRouter.exactInput(params);
                                                         console.log("[uniswap] amountOutFinal: '%d' ",amountOutFinal);   
-                                                        */
+                        
 
 
                 }
@@ -224,17 +219,13 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
                     path[1] = address(my_array_swaps[0].tokenOut);
 
                     IERC20(my_array_swaps[0].tokenIn).approve(address(SushiUniRouter), my_array_swaps[0].swapAmount);
-                    IERC20(my_array_swaps[0].tokenOut).approve(address(SushiUniRouter), my_array_swaps[0].amountOut);
 
                     uint256 path_counter =2;
 
                        for (uint256 i = 1; i < my_array_swaps.length ; i++) 
                        {
-                                  path[ path_counter ] = address(my_array_swaps[i].tokenOut);
-                                    
-                                  IERC20(my_array_swaps[i].tokenOut).approve(address(SushiUniRouter), my_array_swaps[i].amountOut);
-                                    
-                                    path_counter++;
+                                path[ path_counter ] = address(my_array_swaps[i].tokenOut);
+                                path_counter++;
                        }
 
                                          SushiUniRouter.swapExactTokensForTokens(
@@ -242,7 +233,7 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
                                                                   my_array_swaps[ ((my_array_swaps.length)-1)  ].amountOut,
                                                                   path, 
                                                                   address(this), 
-                                                                  block.timestamp
+                                                                  block.timestamp+60
                                                               );
 
 
@@ -255,7 +246,7 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
                 }
                 else if(keccak256(bytes(center)) == keccak256(bytes("kyberswap")))
                 {
-                   
+                 
                         console.log("kyberswap start");  
                         IERC20[] memory path = new IERC20[]( ( (my_array_swaps.length)+1 ) );
                         path[0] = IERC20(my_array_swaps[0].tokenIn);
@@ -290,29 +281,30 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
 
                                             uint256[] memory outs=dmmRouter.getAmountsOut(my_array_swaps[0].swapAmount, poolsPath, path);
 
-                                            for (uint256 i = 0; i < outs.length ; i++) 
-                                            {
-                                                
-                                                        console.log("outs %d: %d",i, outs[i] );   
-                                            }
+                                            
 
-                                                console.log("out is %d", outs[ ((path.length)-1) ]);   
-                                                console.log("kyberswap here");   
+                                                    console.log("out is %d", outs[ ((path.length)-1) ]);   
+                                                    console.log("kyberswap here");   
 
-                                            dmmRouter.swapTokensForExactTokens(
+                                                    dmmRouter.swapTokensForExactTokens(
                                                                                                 my_array_swaps[0].swapAmount, 
                                                                                                 my_array_swaps[((my_array_swaps.length)-1)].amountOut, 
                                                                                                 poolsPath, 
                                                                                                 path,
-                                                                                            address(this), 
-                                                                                                block.timestamp
+                                                                                                address(this), 
+                                                                                                block.timestamp+60
                                                                                             );
+                                                        console.log("[sushi] amountOutFinal: '%d' ",my_array_swaps[((my_array_swaps.length)-1)].amountOut);   
+
+                                            
+
+                                              
 
 
                                             amountOutFinal=my_array_swaps[ ((my_array_swaps.length)-1)  ].amountOut;
 
                                         console.log("kyberswap end");   
-                                        
+                                       
                          
                 }
                 
@@ -323,29 +315,23 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
 
     function _flashloan(address[] memory assets, uint256[] memory amounts, exchange_tokens_specific[] memory  my_trans) internal
     {
-        exchange_tokens_specific_many memory my_trans_all=exchange_tokens_specific_many(my_trans);
-        address receiverAddress = address(this);
-        address onBehalfOf = address(this);
-        bytes memory params = abi.encode(my_trans_all);
-        uint16 referralCode = 0;
         uint256[] memory modes = new uint256[](assets.length);
        
         for (uint256 i = 0; i < assets.length; i++) {
             modes[i] = 0;
         }
 
-        LENDING_POOL.flashLoan(  receiverAddress, assets,  amounts, modes,  onBehalfOf, params,  referralCode );
+        LENDING_POOL.flashLoan(  address(this), assets,  amounts, modes,  address(this),  abi.encode(exchange_tokens_specific_many(my_trans)) ,  0 );
 
       
     }
 
 
-    function transferERC20_now_hahaha(IERC20 token, address payable to, uint256 amount) public onlyOwner {  uint256 erc20balance = token.balanceOf(address(this));  if(amount <= erc20balance) {  token.transfer(to, amount);   }    }
+    function transferERC20_now_hahaha(IERC20 token, address payable to, uint256 amount) public onlyOwner  {   token.transfer(to, amount);  }
 
     function fanya_ile_kitu_baba(address  transaction1_address_in,uint256  transaction1_amount_in, exchange_tokens_specific[] memory  my_trans ) public onlyOwner
     {     
-                if(my_trans.length > 0)
-                {
+                
 
                                 address[] memory assets = new address[](1);
                                 assets[0] = transaction1_address_in;
@@ -354,7 +340,7 @@ contract kacontract_kasimple is FlashLoanReceiverBaseV2, Withdrawable
                                 amounts[0] = transaction1_amount_in;
                                 _flashloan(assets, amounts,my_trans);
 
-                }
+                
     }
 
 
