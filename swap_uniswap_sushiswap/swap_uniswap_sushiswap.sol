@@ -4,20 +4,17 @@ import "../avvee/contracts/v2/aave/FlashLoanReceiverBaseV2.sol";
 import "../avvee/interfaces/v2/ILendingPoolAddressesProviderV2.sol";
 import "../avvee/interfaces/v2/ILendingPoolV2.sol";
 
-//uniswap
-import '../uniswap/contracts/libraries/TransferHelper.sol';
+
 
 
 
 //sushiswap
 import "../sushiswap/interfaces/IUniswapV2Router02.sol";
 
-import '../zeplin/token/ERC20/IERC20.sol';
 
 
 
-
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 
 contract swap_uniswap_sushiswap is FlashLoanReceiverBaseV2, Withdrawable 
@@ -29,10 +26,9 @@ contract swap_uniswap_sushiswap is FlashLoanReceiverBaseV2, Withdrawable
 
   
 
-
-
     uint24 public constant poolFee = 10000000;
 
+/*
     struct base_meta
     {
                  
@@ -47,6 +43,25 @@ contract swap_uniswap_sushiswap is FlashLoanReceiverBaseV2, Withdrawable
                 address  tokenIn;
 
     }
+*/
+
+    struct base_meta
+    {
+                 
+                address  tokenOut;
+                uint256  swapAmount;
+                uint256  amountOut;
+                address  tokenIn;
+
+    }
+
+    struct input_structure
+    {
+                address  tokenAddress;
+                uint256  amount;
+    }
+
+
 
     struct exchange_tokens_specific
     {       
@@ -70,7 +85,8 @@ contract swap_uniswap_sushiswap is FlashLoanReceiverBaseV2, Withdrawable
         //sushi
         SushiUniRouter = IUniswapV2Router02(_SushiUniRouter);
         
-        console.log("ROUTER SET DONE");
+       
+      //  console.log("ROUTER SET DONE");
     }
 
    
@@ -79,10 +95,10 @@ contract swap_uniswap_sushiswap is FlashLoanReceiverBaseV2, Withdrawable
      {          
                             exchange_tokens_specific[] memory my_trans=abi.decode(params, (exchange_tokens_specific_many)).all_exchange_tokens_specific;
                             
-                                    console.log("loaned amounts '%d' ",  IERC20(assets[0]).balanceOf(address(this))   );      
+                                //    console.log("loaned amounts '%d' ",  IERC20(assets[0]).balanceOf(address(this))   );      
                            
-
-                                    for(uint i=0;i<my_trans.length;i++)
+                           
+                               for(uint i=0;i<my_trans.length;i++)
                                     {
                                                 exchange_tokens_specific memory thisonehere=my_trans[i];
                                             
@@ -91,7 +107,10 @@ contract swap_uniswap_sushiswap is FlashLoanReceiverBaseV2, Withdrawable
 
                                                     
                                     }
-                                    console.log("executeOperation now just repay loan");
+                           
+
+                                    
+                                 //   console.log("executeOperation now just repay loan");
 
         
         for (uint256 i = 0; i < assets.length; i++) {
@@ -99,7 +118,7 @@ contract swap_uniswap_sushiswap is FlashLoanReceiverBaseV2, Withdrawable
             IERC20(assets[i]).approve(address(LENDING_POOL), amountOwing);
         }
 
-        console.log("u keep amounts '%d' ",  IERC20(assets[0]).balanceOf(address(this))   );      
+      //  console.log("u keep amounts '%d' ",  IERC20(assets[0]).balanceOf(address(this))   );      
         return true;
 
          
@@ -110,12 +129,11 @@ contract swap_uniswap_sushiswap is FlashLoanReceiverBaseV2, Withdrawable
         function swap_execute5655455(string memory center,base_meta[] memory my_array_swaps) internal returns ( uint256 amountOutFinal)
         {
 
-            console.log("center '%s' and is '%d' long ",center ,my_array_swaps.length );
+           // console.log("center '%s' and is '%d' long ",center ,my_array_swaps.length );
 
-
-                if(keccak256(bytes(center)) == keccak256(bytes("uniswap")))
+             if(keccak256(bytes(center)) == keccak256(bytes("uniswap")))
                 {
-                       console.log("here"); 
+                     //  console.log("here"); 
                     
                 
                                 address[] memory path = new address[]( ( (my_array_swaps.length)+1 ) );
@@ -124,8 +142,8 @@ contract swap_uniswap_sushiswap is FlashLoanReceiverBaseV2, Withdrawable
 
 
                             
-                             TransferHelper.safeApprove(address(my_array_swaps[0].tokenIn), address(UniSwapRouter), my_array_swaps[0].swapAmount);
-                           
+                            // TransferHelper.safeApprove(address(my_array_swaps[0].tokenIn), address(UniSwapRouter), my_array_swaps[0].swapAmount);
+                              IERC20(my_array_swaps[0].tokenIn).approve(address(UniSwapRouter), my_array_swaps[0].swapAmount);
 
                                 
                                 uint256 path_counter =2;
@@ -136,6 +154,7 @@ contract swap_uniswap_sushiswap is FlashLoanReceiverBaseV2, Withdrawable
                                           
                                             path_counter++;
                                 }
+                                
                                 
 
                                                     UniSwapRouter.swapExactTokensForTokens(
@@ -149,7 +168,7 @@ contract swap_uniswap_sushiswap is FlashLoanReceiverBaseV2, Withdrawable
 
                                                 amountOutFinal= my_array_swaps[ ((my_array_swaps.length)-1)  ].amountOut;
 
-                                                console.log("[uniswap] amountOutFinal: '%d' ",amountOutFinal);  
+                                              //  console.log("[uniswap] amountOutFinal: '%d' ",amountOutFinal);  
                                             
 
 
@@ -184,7 +203,7 @@ contract swap_uniswap_sushiswap is FlashLoanReceiverBaseV2, Withdrawable
 
                                     amountOutFinal= my_array_swaps[ ((my_array_swaps.length)-1)  ].amountOut;
 
-                                    console.log("[sushi] amountOutFinal: '%d' ",amountOutFinal);   
+                                   // console.log("[sushi] amountOutFinal: '%d' ",amountOutFinal);   
 
                     
 
@@ -211,15 +230,23 @@ contract swap_uniswap_sushiswap is FlashLoanReceiverBaseV2, Withdrawable
 
     function transferERC20_now_hahaha(IERC20 token, address payable to, uint256 amount) public onlyOwner  {   token.transfer(to, amount);  }
 
-    function fanya_ile_kitu_baba(address  transaction1_address_in,uint256  transaction1_amount_in, exchange_tokens_specific[] memory  my_trans ) public onlyOwner
+    function fanya_ile_kitu_baba(input_structure[] memory loan_assets_addresses, exchange_tokens_specific[] memory  my_trans ) public onlyOwner
     {     
                 
 
-                                address[] memory assets = new address[](1);
-                                assets[0] = transaction1_address_in;
+                                address[] memory assets = new address[](loan_assets_addresses.length);
+                                uint256[] memory amounts = new uint256[](loan_assets_addresses.length);
 
-                                uint256[] memory amounts = new uint256[](1);
-                                amounts[0] = transaction1_amount_in;
+                            for(uint i=0;i<loan_assets_addresses.length;i++)
+                            {
+                                input_structure memory loan_assets_addresses_specific=loan_assets_addresses[i];
+
+                                assets[0] = loan_assets_addresses_specific.tokenAddress;
+                                amounts[0] = loan_assets_addresses_specific.amount;
+                            }
+                                
+
+
                                 _flashloan(assets, amounts,my_trans);
 
                 
